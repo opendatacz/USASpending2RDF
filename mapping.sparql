@@ -1,0 +1,158 @@
+PREFIX adms:    <http://www.w3.org/ns/adms#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX gr:      <http://purl.org/goodrelations/v1#>
+PREFIX pc:      <http://purl.org/procurement/public-contracts#>
+PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX schema:  <http://schema.org/>
+PREFIX skos:    <http://www.w3.org/2004/02/skos/core#>
+PREFIX xsd:     <http://www.w3.org/2001/XMLSchema#>
+
+CONSTRUCT {
+  ?contract a pc:Contract ;
+    pc:numberOfTenders ?numberOfTenders ;
+    adms:identifier ?contractIdentifier ;
+    dcterms:description ?description ;
+    pc:awardedTender ?awardedTender ;
+    pc:estimatedEndDate ?estimatedEndDate ;
+    pc:actualEndDate ?actualEndDate ;
+    pc:estimatedPrice ?estimatedPrice ;
+    pc:location ?contractLocation ;
+    pc:item ?item ;
+    pc:mainObject ?mainObject ;
+    pc:contractingAuthority ?contractingAuthority
+    .
+  ?contractIdentifier a adms:Identifier ;
+    skos:notation ?unique_transaction_id
+    .
+  ?contractLocation a schema:Place ;
+    schema:address ?contractAddress
+    .
+  ?contractAddress a schema:PostalAddress ;
+    schema:addressCountry ?contractCountry ;
+    schema:addressRegion ?pop_state_code ;
+    schema:addressLocality ?PlaceofPerformanceCity ;
+    schema:postalCode ?placeofperformancezipcode
+    .
+  ?contractCountry a schema:Country ;
+    schema:name ?placeofperformancecountrycode
+    .
+  ?item a gr:Offering ;
+    gr:includes ?includedProductOrService
+    .
+  ?includedProductOrService a gr:SomeItems ;
+    gr:name ?productorservicecode
+    .
+  ?mainObject a skos:Concept ;
+    skos:inScheme <http://purl.org/weso/pscs/naics/2012/resource/ds> ;
+    skos:prefLabel ?naicsLabel
+    .
+  ?contractingAuthority a gr:BusinessEntity
+    .
+  ?awardedTender a pc:Tender ;
+    pc:supplier ?awardedSupplier
+    .
+  ?awardedSupplier a gr:BusinessEntity ;
+    gr:legalName ?vendorname ;
+    skos:altLabel ?vendoralternatename ;
+    adms:identifier ?awardedSupplierIdentifier ;
+    schema:location ?awardedSupplierLocation ;
+    schema:contactPoint ?awardedSupplierContact
+    .
+  ?awardedSupplierIdentifier a adms:Identifier ;
+    skos:notation ?dunsnumber ;
+    adms:schemaAgency <http://dbpedia.org/resource/Dun_&_Bradstreet>
+    .
+  ?awardedSupplierLocation a schema:Place ;
+    schema:address ?awardedSupplierAddress
+    .
+  ?awardedSupplierAddress a schema:PostalAddress ;
+    schema:addressCountry ?awardedSupplierCountry ;
+    schema:addressRegion ?state ;
+    schema:addressLocality ?city ;
+    schema:streetAddress ?streetaddress ;
+    schema:postalCode ?zipcode
+    .
+  ?awardedSupplierContact a schema:ContactPoint ;
+    schema:telephone ?phoneno ;
+    schema:faxNumber ?faxno
+    .
+  ?awardedSupplierCountry a schema:Country ;
+    schema:name ?vendorcountrycode
+    .
+  ?estimatedPrice a gr:PriceSpecification ;
+    gr:hasCurrency "USD" ;
+    gr:hasCurrencyValue ?estimatedPriceValue
+    .
+}
+WHERE {
+  BIND("http://ld.opendata.cz/resource/usa-spending/" AS ?baseURI)
+
+  # Mint URIs
+  BIND(URI(CONCAT(?baseURI, "contract/", ?unique_transaction_id)) AS ?contract)
+  BIND(URI(CONCAT(?baseURI, "identifier/", ?unique_transaction_id)) AS ?contractIdentifier)
+  BIND(URI(CONCAT(?baseURI, "tender/", SHA1(?vendorname))) AS ?awardedTender)
+  BIND(URI(CONCAT(?baseURI, "business-entity/", ?dunsnumber)) AS ?awardedSupplier)
+  BIND(URI(CONCAT(?baseURI, "identifier/", ?dunsnumber)) AS ?awardedSupplierIdentifier)
+  BIND(URI(CONCAT(
+    ?baseURI,
+    "place/",
+    SHA1(CONCAT(?streetaddress, ?city, ?state, ?zipcode, ?vendorcountrycode))
+  )) AS ?awardedSupplierLocation)
+  BIND(URI(CONCAT(
+    ?baseURI,
+    "postal-address/",
+    SHA1(CONCAT(?streetaddress, ?city, ?state, ?zipcode, ?vendorcountrycode))
+  )) AS ?awardedSupplierAddress)
+  BIND(URI(CONCAT(?baseURI, "country/", SHA1(?vendorcountrycode))) AS ?awardedSupplierCountry)
+  BIND(URI(CONCAT(?baseURI, "price-specification/", ?unique_transaction_id)) AS ?estimatedPrice) 
+  BIND(URI(CONCAT(?baseURI, "contact-point/", SHA1(CONCAT(?phoneno, ?faxno)))) AS ?awardedSupplierContact)
+  BIND(URI(CONCAT(
+    ?baseURI,
+    "place/",
+    SHA1(CONCAT(?PlaceofPerformanceCity, ?pop_state_code, ?placeofperformancecountrycode, ?placeofperformancezipcode))
+  )) AS ?contractLocation)
+  BIND(URI(CONCAT(
+    ?baseURI,
+    "postal-address/",
+    SHA1(CONCAT(?PlaceofPerformanceCity, ?pop_state_code, ?placeofperformancecountrycode, ?placeofperformancezipcode))
+  )) AS ?contractAddress) 
+  BIND(URI(CONCAT(?baseURI, "country/", SHA1(?placeofperformancecountrycode))) AS ?contractCountry)
+  BIND(URI(CONCAT(?baseURI, "offering/", SHA1(?productorservicecode))) AS ?item)
+  BIND(URI(CONCAT(?baseURI, "some-items/", SHA1(?productorservicecode))) AS ?includedProductOrService)
+  BIND(URI(CONCAT(
+    "http://purl.org/weso/pscs/naics/2012/resource/",
+    IF(
+      REGEX(?principalnaicscode, "(\\d+).*"),
+      REPLACE(?principalnaicscode, "(\\d+).*", "$1"),
+      SHA1(?principalnaicscode)
+    )
+  )) AS ?mainObject)
+  BIND(URI(CONCAT(?baseURI, "business-entity/", "")) AS ?contractingAuthority)
+   
+  # Process literals
+  BIND(STRDT(?numberofoffersreceived, xsd:nonNegativeInteger) AS ?numberOfTenders)
+  BIND(STRLANG(?descriptionofcontractrequirement, "en-US") AS ?description)
+  BIND(STRDT(REPLACE(
+    ?currentcompletiondate,
+    "(\\d{2})/(\\d{2})/(\\d{4})",
+    "$3-$1-$2"
+  ), xsd:date) AS ?estimatedEndDate)
+  BIND(STRDT(REPLACE(
+    ?ultimatecompletiondate,
+    "(\\d{2})/(\\d{2})/(\\d{4})",
+    "$3-$1-$2"
+  ), xsd:date) AS ?actualEndDateTemp)
+  BIND(IF(?actualEndDateTemp < xsd:date(now()), ?actualEndDateTemp, BNODE()) AS ?actualEndDate)
+  BIND(STRDT(REPLACE(
+    ?effectivedate,
+    "(\\d{2})/(\\d{2})/(\\d{4})",
+    "$3-$1-$2"
+  ), xsd:date) AS ?awardDate)
+  BIND(STRDT(?obligatedamount, xsd:decimal) AS ?estimatedPriceValue)
+  BIND(STRLANG(IF(
+    REGEX(?principalnaicscode, "(\\d+):\\s(\\w+)"),
+    REPLACE(?principalnaicscode, "(\\d+):\\s(\\w+)", "$2"),
+    ?principalnaicscode
+  ), "en-US") AS ?naicsLabel)
+}
+OFFSET 1
