@@ -1,0 +1,29 @@
+[source]
+# possible values: GET, POST, CSV
+method=CSV
+# url of the source, in case of CSV use path
+url=.\\Data_Feed.csv
+
+[params]
+# params used in GET or POST requests
+state=AL
+detail=c
+fiscal_year=2012
+
+[paging]
+# paging by parameters (GET or POST) or by lines (CSV)
+limit_name=max_records
+offset_name=records_from
+max_limit=500
+step=100
+offset=0
+
+[system]
+# post separation script
+exec=t\\bin\\tarql.bat mapping.sparql $1
+# output file of the exec
+output=output
+# keep parts
+parts=KEEP
+partName=part
+
