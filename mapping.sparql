@@ -10,7 +10,7 @@ PREFIX xsd:     <http://www.w3.org/2001/XMLSchema#>
 CONSTRUCT {
   ?contract a pc:Contract ;
     pc:numberOfTenders ?numberOfTenders ;
-    adms:identifier ?contractIdentifier ;
+    adms:identifier ?transactionIdentifier, ?contractIdentifier, ?solicitationIdentifier ;
     dcterms:description ?description ;
     pc:awardedTender ?awardedTender ;
     pc:estimatedEndDate ?estimatedEndDate ;
@@ -21,8 +21,17 @@ CONSTRUCT {
     pc:mainObject ?mainObject ;
     pc:contractingAuthority ?contractingAuthority
     .
+  ?transactionIdentifier a adms:Identifier ;
+    skos:notation ?unique_transaction_id ;
+    dcterms:type <http://ld.opendata.cz/resource/identifier-types/transaction>
+    .
   ?contractIdentifier a adms:Identifier ;
-    skos:notation ?unique_transaction_id
+    skos:notation ?piid ;
+    dcterms:type <http://ld.opendata.cz/resource/identifier-types/contract>
+    .
+  ?solicitationIdentifier a adms:Identifier ;
+    skos:notation ?solicitationid ;
+    dcterms:type <http://ld.opendata.cz/resource/identifier-types/solicitation>
     .
   ?contractLocation a schema:Place ;
     schema:address ?contractAddress
@@ -46,7 +55,8 @@ CONSTRUCT {
     skos:inScheme <http://purl.org/weso/pscs/naics/2012/resource/ds> ;
     skos:prefLabel ?naicsLabel
     .
-  ?contractingAuthority a gr:BusinessEntity
+  ?contractingAuthority a gr:BusinessEntity ;
+    gr:legalName ?contractingAuthorityLegalName
     .
   ?awardedTender a pc:Tender ;
     pc:supplier ?awardedSupplier
@@ -89,7 +99,8 @@ WHERE {
 
   # Mint URIs
   BIND(URI(CONCAT(?baseURI, "contract/", ?unique_transaction_id)) AS ?contract)
-  BIND(URI(CONCAT(?baseURI, "identifier/", ?unique_transaction_id)) AS ?contractIdentifier)
+  BIND(URI(CONCAT(?baseURI, "identifier/", ?piid)) AS ?contractIdentifier)
+  BIND(URI(CONCAT(?baseURI, "identifier/", ?unique_transaction_id)) AS ?transactionIdentifier)
   BIND(URI(CONCAT(?baseURI, "tender/", SHA1(?vendorname))) AS ?awardedTender)
   BIND(URI(CONCAT(?baseURI, "business-entity/", ?dunsnumber)) AS ?awardedSupplier)
   BIND(URI(CONCAT(?baseURI, "identifier/", ?dunsnumber)) AS ?awardedSupplierIdentifier)
@@ -127,7 +138,8 @@ WHERE {
       SHA1(?principalnaicscode)
     )
   )) AS ?mainObject)
-  BIND(URI(CONCAT(?baseURI, "business-entity/", "")) AS ?contractingAuthority)
+  BIND(URI(CONCAT(?baseURI, "business-entity/", SHA1(?contractingofficeagencyid))) AS ?contractingAuthority)
+  BIND(URI(CONCAT(?baseURI, "identifier/", ?solicitationid)) AS ?solicitationIdentifier)
    
   # Process literals
   BIND(STRDT(?numberofoffersreceived, xsd:nonNegativeInteger) AS ?numberOfTenders)
@@ -154,5 +166,10 @@ WHERE {
     REPLACE(?principalnaicscode, "(\\d+):\\s(\\w+)", "$2"),
     ?principalnaicscode
   ), "en-US") AS ?naicsLabel)
+  BIND(IF(
+    REGEX(?contractingofficeagencyid, "(\\d+):\s(\\w+)"),
+    REPLACE(?contractingofficeagencyid, "(\\d+):\s(\\w+)", "$2"),
+    ?contractingofficeagencyid
+  ) AS ?contractingAuthorityLegalName)
 }
 OFFSET 1
