@@ -167,8 +167,8 @@ WHERE {
     ?principalnaicscode
   ), "en-US") AS ?naicsLabel)
   BIND(IF(
-    REGEX(?contractingofficeagencyid, "(\\d+):\s(\\w+)"),
-    REPLACE(?contractingofficeagencyid, "(\\d+):\s(\\w+)", "$2"),
+    REGEX(?contractingofficeagencyid, "(\\d+):\\s(\\w+)"),
+    REPLACE(?contractingofficeagencyid, "(\\d+):\\s(\\w+)", "$2"),
     ?contractingofficeagencyid
   ) AS ?contractingAuthorityLegalName)
 }
