@@ -1,6 +1,9 @@
 PREFIX adms:    <http://www.w3.org/ns/adms#>
 PREFIX dcterms: <http://purl.org/dc/terms/>
 PREFIX gr:      <http://purl.org/goodrelations/v1#>
+PREFIX org:     <http://www.w3.org/ns/org#>
+PREFIX ov:      <http://open.vocab.org/terms/>
+PREFIX payment: <http://reference.data.gov.uk/def/payment#>
 PREFIX pc:      <http://purl.org/procurement/public-contracts#>
 PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX schema:  <http://schema.org/>
@@ -8,22 +11,29 @@ PREFIX skos:    <http://www.w3.org/2004/02/skos/core#>
 PREFIX xsd:     <http://www.w3.org/2001/XMLSchema#>
 
 CONSTRUCT {
-  ?contract a pc:Contract ;
+  ?payment a payment:Payment ;
+    payment:reference ?unique_transaction_id ;
+    payment:contract ?contract ;
+    ov:versionnumber ?transactionnumber ;
+    payment:payer ?contractingAuthority ;
+    payment:payee ?awardedSupplier
+    .
+  ?contract a ?class ;
     pc:numberOfTenders ?numberOfTenders ;
-    adms:identifier ?transactionIdentifier, ?contractIdentifier, ?solicitationIdentifier ;
+    adms:identifier ?contractIdentifier, ?solicitationIdentifier ;
     dcterms:description ?description ;
     pc:awardedTender ?awardedTender ;
+    pc:awardDate ?awardDate ;
     pc:estimatedEndDate ?estimatedEndDate ;
     pc:actualEndDate ?actualEndDate ;
     pc:estimatedPrice ?estimatedPrice ;
     pc:location ?contractLocation ;
     pc:item ?item ;
     pc:mainObject ?mainObject ;
-    pc:contractingAuthority ?contractingAuthority
-    .
-  ?transactionIdentifier a adms:Identifier ;
-    skos:notation ?unique_transaction_id ;
-    dcterms:type <http://ld.opendata.cz/resource/identifier-types/transaction>
+    pc:contractingAuthority ?contractingAuthority ;
+    ov:versionnumber ?modnumber ;
+    dcterms:type ?contractActionType ;
+    skos:changeNote ?reasonformodification
     .
   ?contractIdentifier a adms:Identifier ;
     skos:notation ?piid ;
@@ -66,7 +76,8 @@ CONSTRUCT {
     skos:altLabel ?vendoralternatename ;
     adms:identifier ?awardedSupplierIdentifier ;
     schema:location ?awardedSupplierLocation ;
-    schema:contactPoint ?awardedSupplierContact
+    schema:contactPoint ?awardedSupplierContact ;
+    org:classification ?awardedSupplierClassification
     .
   ?awardedSupplierIdentifier a adms:Identifier ;
     skos:notation ?dunsnumber ;
@@ -89,18 +100,29 @@ CONSTRUCT {
   ?awardedSupplierCountry a schema:Country ;
     schema:name ?vendorcountrycode
     .
+  ?awardedSupplierClassification a skos:Concept ;
+    skos:prefLabel ?classification
+    .
   ?estimatedPrice a gr:PriceSpecification ;
     gr:hasCurrency "USD" ;
     gr:hasCurrencyValue ?estimatedPriceValue
     .
 }
 WHERE {
+  # Mapping contract types
+  VALUES (?contractactiontype ?class) {
+    ("DO Delivery Order" pc:FrameworkAgreement)
+    #("PO Purchase Order" )
+    ("DCA Definitive Contract" pc:Contract)
+    #("BPA Call Blanket Purchase Agreement" )
+  }
   BIND("http://ld.opendata.cz/resource/usa-spending/" AS ?baseURI)
 
   # Mint URIs
-  BIND(URI(CONCAT(?baseURI, "contract/", ?unique_transaction_id)) AS ?contract)
-  BIND(URI(CONCAT(?baseURI, "identifier/", ?piid)) AS ?contractIdentifier)
   BIND(URI(CONCAT(?baseURI, "identifier/", ?unique_transaction_id)) AS ?transactionIdentifier)
+  BIND(URI(CONCAT(?baseURI, "payment/", ?unique_transaction_id)) AS ?payment)
+  BIND(URI(CONCAT(?baseURI, "contract/", ENCODE_FOR_URI(?piid))) AS ?contract)
+  BIND(URI(CONCAT(?baseURI, "identifier/", ENCODE_FOR_URI(?piid))) AS ?contractIdentifier)
   BIND(URI(CONCAT(?baseURI, "tender/", SHA1(?vendorname))) AS ?awardedTender)
   BIND(URI(CONCAT(?baseURI, "business-entity/", ?dunsnumber)) AS ?awardedSupplier)
   BIND(URI(CONCAT(?baseURI, "identifier/", ?dunsnumber)) AS ?awardedSupplierIdentifier)
@@ -140,10 +162,12 @@ WHERE {
   )) AS ?mainObject)
   BIND(URI(CONCAT(?baseURI, "business-entity/", SHA1(?contractingofficeagencyid))) AS ?contractingAuthority)
   BIND(URI(CONCAT(?baseURI, "identifier/", ?solicitationid)) AS ?solicitationIdentifier)
+  BIND(URI(CONCAT(?baseURI, "concept/", SHA1(?organizationaltype))) AS ?awardedSupplierClassification)
    
   # Process literals
   BIND(STRDT(?numberofoffersreceived, xsd:nonNegativeInteger) AS ?numberOfTenders)
   BIND(STRLANG(?descriptionofcontractrequirement, "en-US") AS ?description)
+  BIND(STRLANG(?contractactiontype, "en-US") AS ?contractActionType)
   BIND(STRDT(REPLACE(
     ?currentcompletiondate,
     "(\\d{2})/(\\d{2})/(\\d{4})",
@@ -156,10 +180,15 @@ WHERE {
   ), xsd:date) AS ?actualEndDateTemp)
   BIND(IF(?actualEndDateTemp < xsd:date(now()), ?actualEndDateTemp, BNODE()) AS ?actualEndDate)
   BIND(STRDT(REPLACE(
-    ?effectivedate,
+    ?signeddate,
     "(\\d{2})/(\\d{2})/(\\d{4})",
     "$3-$1-$2"
   ), xsd:date) AS ?awardDate)
+  BIND(STRDT(REPLACE(
+    ?effectivedate,
+    "(\\d{2})/(\\d{2})/(\\d{4})",
+    "$3-$1-$2"
+  ), xsd:date) AS ?startDate)
   BIND(STRDT(?obligatedamount, xsd:decimal) AS ?estimatedPriceValue)
   BIND(STRLANG(IF(
     REGEX(?principalnaicscode, "(\\d+):\\s(\\w+)"),
@@ -171,5 +200,6 @@ WHERE {
     REPLACE(?contractingofficeagencyid, "(\\d+):\\s(\\w+)", "$2"),
     ?contractingofficeagencyid
   ) AS ?contractingAuthorityLegalName)
+  BIND(STRLANG(?organizationaltype, "en-US") AS ?classification) 
 }
 OFFSET 1
