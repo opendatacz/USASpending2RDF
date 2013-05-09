@@ -163,7 +163,7 @@ WHERE {
   BIND(URI(CONCAT(?baseURI, "business-entity/", SHA1(?contractingofficeagencyid))) AS ?contractingAuthority)
   BIND(REPLACE(?solicitationid, "^(\\s)?(\\S+)(\\s+$)?", "$2") AS ?solicitationIdentifierTemp)
   BIND(IF(
-    STRLEN(?solicitationIdentifierTemp) = 0,
+    (STRLEN(?solicitationIdentifierTemp) = 0) || (?solicitationIdentifierTemp = "NOT APPLICABLE"),
     BNODE(),
     URI(CONCAT(?baseURI, "identifier/", ENCODE_FOR_URI(?solicitationIdentifierTemp)))
   ) AS ?solicitationIdentifier)
