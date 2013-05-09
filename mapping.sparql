@@ -161,7 +161,12 @@ WHERE {
     )
   )) AS ?mainObject)
   BIND(URI(CONCAT(?baseURI, "business-entity/", SHA1(?contractingofficeagencyid))) AS ?contractingAuthority)
-  BIND(URI(CONCAT(?baseURI, "identifier/", ?solicitationid)) AS ?solicitationIdentifier)
+  BIND(REPLACE(?solicitationid, "^(\\s)?(\\S+)(\\s+$)?", "$2") AS ?solicitationIdentifierTemp)
+  BIND(IF(
+    STRLEN(?solicitationIdentifierTemp) = 0,
+    BNODE(),
+    URI(CONCAT(?baseURI, "identifier/", ENCODE_FOR_URI(?solicitationIdentifierTemp)))
+  ) AS ?solicitationIdentifier)
   BIND(URI(CONCAT(?baseURI, "concept/", SHA1(?organizationaltype))) AS ?awardedSupplierClassification)
    
   # Process literals
