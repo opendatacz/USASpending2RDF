@@ -49,17 +49,17 @@ CONSTRUCT {
   ?contractAddress a schema:PostalAddress ;
     schema:addressCountry ?contractCountry ;
     schema:addressRegion ?pop_state_code ;
-    schema:addressLocality ?PlaceofPerformanceCity ;
+    schema:addressLocality ?contractAddressLocality ;
     schema:postalCode ?placeofperformancezipcode
     .
   ?contractCountry a schema:Country ;
-    schema:name ?placeofperformancecountrycode
+    schema:name ?contractCountryName
     .
   ?item a gr:Offering ;
     gr:includes ?includedProductOrService
     .
   ?includedProductOrService a gr:SomeItems ;
-    gr:name ?productorservicecode
+    gr:name ?includedProductOrServiceName
     .
   ?mainObject a skos:Concept ;
     skos:inScheme <http://purl.org/weso/pscs/naics/2012/resource/ds> ;
@@ -89,7 +89,7 @@ CONSTRUCT {
   ?awardedSupplierAddress a schema:PostalAddress ;
     schema:addressCountry ?awardedSupplierCountry ;
     schema:addressRegion ?state ;
-    schema:addressLocality ?city ;
+    schema:addressLocality ?awardedSupplierAddressCity ;
     schema:streetAddress ?streetaddress ;
     schema:postalCode ?zipcode
     .
@@ -98,7 +98,7 @@ CONSTRUCT {
     schema:faxNumber ?faxno
     .
   ?awardedSupplierCountry a schema:Country ;
-    schema:name ?vendorcountrycode
+    schema:name ?awardedSupplierCountryName
     .
   ?awardedSupplierClassification a skos:Concept ;
     skos:prefLabel ?classification
@@ -129,29 +129,33 @@ WHERE {
   BIND(URI(CONCAT(
     ?baseURI,
     "place/",
-    SHA1(CONCAT(?streetaddress, ?city, ?state, ?zipcode, ?vendorcountrycode))
+    SHA1(CONCAT(?streetaddress, ?awardedSupplierAddressCity, ?state, ?zipcode, ?awardedSupplierCountryName))
   )) AS ?awardedSupplierLocation)
   BIND(URI(CONCAT(
     ?baseURI,
     "postal-address/",
-    SHA1(CONCAT(?streetaddress, ?city, ?state, ?zipcode, ?vendorcountrycode))
+    SHA1(CONCAT(?streetaddress, ?awardedSupplierAddressCity, ?state, ?zipcode, ?awardedSupplierCountryName))
   )) AS ?awardedSupplierAddress)
-  BIND(URI(CONCAT(?baseURI, "country/", SHA1(?vendorcountrycode))) AS ?awardedSupplierCountry)
+  BIND(URI(CONCAT(?baseURI, "country/", SHA1(?awardedSupplierCountryName))) AS ?awardedSupplierCountry)
   BIND(URI(CONCAT(?baseURI, "price-specification/", ?unique_transaction_id)) AS ?estimatedPrice) 
   BIND(URI(CONCAT(?baseURI, "contact-point/", SHA1(CONCAT(?phoneno, ?faxno)))) AS ?awardedSupplierContact)
+  BIND(STRLANG(?PlaceOfPerformanceCity, "en-US") AS ?contractAddressLocality)
+  BIND(STRLANG(?city, "en-US") AS ?awardedSupplierAddressCity)
+  BIND(STRLANG(?vendorcountrycode, "en-US") AS ?awardedSupplierCountryName)
+  BIND(STRLANG(?productorservicecode, "en-US") AS ?includedProductOrServiceName)
   BIND(URI(CONCAT(
     ?baseURI,
     "place/",
-    SHA1(CONCAT(?PlaceofPerformanceCity, ?pop_state_code, ?placeofperformancecountrycode, ?placeofperformancezipcode))
+    SHA1(CONCAT(?contractAddressLocality, ?pop_state_code, ?contractCountryName, ?placeofperformancezipcode))
   )) AS ?contractLocation)
   BIND(URI(CONCAT(
     ?baseURI,
     "postal-address/",
-    SHA1(CONCAT(?PlaceofPerformanceCity, ?pop_state_code, ?placeofperformancecountrycode, ?placeofperformancezipcode))
+    SHA1(CONCAT(?contractAddressLocality, ?pop_state_code, ?contractCountryName, ?placeofperformancezipcode))
   )) AS ?contractAddress) 
-  BIND(URI(CONCAT(?baseURI, "country/", SHA1(?placeofperformancecountrycode))) AS ?contractCountry)
-  BIND(URI(CONCAT(?baseURI, "offering/", SHA1(?productorservicecode))) AS ?item)
-  BIND(URI(CONCAT(?baseURI, "some-items/", SHA1(?productorservicecode))) AS ?includedProductOrService)
+  BIND(URI(CONCAT(?baseURI, "country/", SHA1(?contractCountryName))) AS ?contractCountry)
+  BIND(URI(CONCAT(?baseURI, "offering/", SHA1(?includedProductOrServiceName))) AS ?item)
+  BIND(URI(CONCAT(?baseURI, "some-items/", SHA1(?includedProductOrServiceName))) AS ?includedProductOrService)
   BIND(URI(CONCAT(
     "http://purl.org/weso/pscs/naics/2012/resource/",
     IF(
@@ -173,6 +177,11 @@ WHERE {
   BIND(STRDT(?numberofoffersreceived, xsd:nonNegativeInteger) AS ?numberOfTenders)
   BIND(STRLANG(?descriptionofcontractrequirement, "en-US") AS ?description)
   BIND(STRLANG(?contractactiontype, "en-US") AS ?contractActionType)
+  BIND(STRLANG(IF(
+    REGEX(?placeofperformancecountrycode, "(\\w+):\\s*(\\w+)"),
+    REPLACE(?placeofperformancecountrycode, "(\\w+):\\s*(\\w+)", "$2"),
+    ?placeofperformancecountrycode
+  ), "en-US") AS ?contractCountryName)
   BIND(STRDT(REPLACE(
     ?currentcompletiondate,
     "(\\d{2})/(\\d{2})/(\\d{4})",
@@ -200,11 +209,11 @@ WHERE {
     REPLACE(?principalnaicscode, "(\\d+):\\s(\\w+)", "$2"),
     ?principalnaicscode
   ), "en-US") AS ?naicsLabel)
-  BIND(IF(
+  BIND(STRLANG(IF(
     REGEX(?contractingofficeagencyid, "(\\d+):\\s(\\w+)"),
     REPLACE(?contractingofficeagencyid, "(\\d+):\\s(\\w+)", "$2"),
     ?contractingofficeagencyid
-  ) AS ?contractingAuthorityLegalName)
+  ), "en-US") AS ?contractingAuthorityLegalName)
   BIND(STRLANG(?organizationaltype, "en-US") AS ?classification) 
 }
 OFFSET 1
