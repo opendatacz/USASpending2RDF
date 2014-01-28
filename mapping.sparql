@@ -211,7 +211,7 @@ WHERE {
   ), "en-US") AS ?naicsLabel)
   BIND(STRLANG(IF(
     REGEX(?contractingofficeagencyid, "(\\d+):\\s(\\w+)"),
-    REPLACE(?contractingofficeagencyid, "(\\d+):\\s(\\w+)", "$2"),
+    REPLACE(?contractingofficeagencyid, "(\\d+):\\s(\\w+.*?)(, (DEPARTMENT OF( THE)?)|)$", "$4 $2"),
     ?contractingofficeagencyid
   ), "en-US") AS ?contractingAuthorityLegalName)
   BIND(STRLANG(?organizationaltype, "en-US") AS ?classification) 
