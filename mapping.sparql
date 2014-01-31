@@ -37,11 +37,11 @@ CONSTRUCT {
     .
   ?contractIdentifier a adms:Identifier ;
     skos:notation ?piid ;
-    dcterms:type <http://ld.opendata.cz/resource/identifier-types/contract>
+    dcterms:type <http://linked.opendata.cz/resource/identifier-types/contract>
     .
   ?solicitationIdentifier a adms:Identifier ;
     skos:notation ?solicitationid ;
-    dcterms:type <http://ld.opendata.cz/resource/identifier-types/solicitation>
+    dcterms:type <http://linked.opendata.cz/resource/identifier-types/solicitation>
     .
   ?contractLocation a schema:Place ;
     schema:address ?contractAddress
