@@ -33,7 +33,7 @@ CONSTRUCT {
     pc:contractingAuthority ?contractingAuthority ;
     ov:versionnumber ?modnumber ;
     dcterms:type ?contractActionType ;
-    skos:changeNote ?reasonformodification
+    skos:changeNote ?changeNote
     .
   ?contractIdentifier a adms:Identifier ;
     skos:notation ?piid ;
@@ -208,6 +208,7 @@ WHERE {
     REPLACE(?contractingofficeagencyid, "(\\d+):\\s(\\w+.*?)(, (DEPARTMENT OF( THE)?)|)$", "$4 $2"),
     ?contractingofficeagencyid
   ), "en-US") AS ?contractingAuthorityLegalName)
-  BIND(STRLANG(?organizationaltype, "en-US") AS ?classification) 
+  BIND(STRLANG(?organizationaltype, "en-US") AS ?classification)
+  BIND(STRLANG(?reasonformodification, "en-US") AS ?changeNote) FILTER REGEX(?changeNote, "\\w")
 }
 OFFSET 1
