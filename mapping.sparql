@@ -116,7 +116,7 @@ WHERE {
     ("DCA Definitive Contract" pc:Contract)
     #("BPA Call Blanket Purchase Agreement" )
   }
-  BIND("http://linked.opendata.cz/resource/usa-spending/" AS ?baseURI)
+  BIND("http://linked.opendata.cz/resource/domain/usa-spending/" AS ?baseURI)
 
   # Mint URIs
   BIND(URI(CONCAT(?baseURI, "payment/", ?unique_transaction_id)) AS ?payment)
