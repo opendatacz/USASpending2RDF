@@ -123,8 +123,8 @@ WHERE {
   BIND(URI(CONCAT(?baseURI, "contract/", ENCODE_FOR_URI(?piid))) AS ?contract)
   BIND(URI(CONCAT(?baseURI, "identifier/", ENCODE_FOR_URI(?piid))) AS ?contractIdentifier)
   BIND(URI(CONCAT(?baseURI, "tender/", SHA1(?vendorname))) AS ?awardedTender)
-  BIND(URI(CONCAT(?baseURI, "business-entity/", ?dunsnumber)) AS ?awardedSupplier)
-  BIND(URI(CONCAT(?baseURI, "identifier/", ?dunsnumber)) AS ?awardedSupplierIdentifier)
+  BIND(URI(CONCAT(?baseURI, "business-entity/", ENCODE_FOR_URI(?dunsnumber))) AS ?awardedSupplier)
+  BIND(URI(CONCAT(?baseURI, "identifier/", ENCODE_FOR_URI(?dunsnumber))) AS ?awardedSupplierIdentifier)
   BIND(URI(CONCAT(
     ?baseURI,
     "place/",
