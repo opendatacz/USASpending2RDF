@@ -125,36 +125,43 @@ WHERE {
   BIND(URI(CONCAT(?baseURI, "tender/", SHA1(?vendorname))) AS ?awardedTender)
   BIND(URI(CONCAT(?baseURI, "business-entity/", ENCODE_FOR_URI(?dunsnumber))) AS ?awardedSupplier)
   BIND(URI(CONCAT(?baseURI, "identifier/", ENCODE_FOR_URI(?dunsnumber))) AS ?awardedSupplierIdentifier)
+  BIND(SHA1(CONCAT(?streetaddress, ?city, ?state, ?zipcode, ?vendorcountrycode)) AS ?awardedSupplierSha)
   BIND(URI(CONCAT(
     ?baseURI,
     "place/",
-    SHA1(CONCAT(?streetaddress, ?awardedSupplierAddressCity, ?state, ?zipcode, ?awardedSupplierCountryName))
+    ?awardedSupplierSha
   )) AS ?awardedSupplierLocation)
   BIND(URI(CONCAT(
     ?baseURI,
     "postal-address/",
-    SHA1(CONCAT(?streetaddress, ?awardedSupplierAddressCity, ?state, ?zipcode, ?awardedSupplierCountryName))
+    ?awardedSupplierSha
   )) AS ?awardedSupplierAddress)
-  BIND(URI(CONCAT(?baseURI, "country/", SHA1(?awardedSupplierCountryName))) AS ?awardedSupplierCountry)
+  BIND(URI(CONCAT(?baseURI, "country/", SHA1(?vendorcountrycode))) AS ?awardedSupplierCountry)
   BIND(URI(CONCAT(?baseURI, "price-specification/", ?unique_transaction_id)) AS ?estimatedPrice) 
   BIND(URI(CONCAT(?baseURI, "contact-point/", SHA1(CONCAT(?phoneno, ?faxno)))) AS ?awardedSupplierContact)
   BIND(STRLANG(?PlaceOfPerformanceCity, "en-US") AS ?contractAddressLocality)
   BIND(STRLANG(?city, "en-US") AS ?awardedSupplierAddressCity)
   BIND(STRLANG(?vendorcountrycode, "en-US") AS ?awardedSupplierCountryName)
   BIND(STRLANG(?productorservicecode, "en-US") AS ?includedProductOrServiceName)
+  BIND(SHA1(CONCAT(
+    IF(BOUND(?PlaceOfPerformanceCity),?PlaceOfPerformanceCity, ''),
+    ?pop_state_code,
+    ?placeofperformancecountrycode,
+    ?placeofperformancezipcode
+  )) AS ?contractLocationSha)
   BIND(URI(CONCAT(
     ?baseURI,
     "place/",
-    SHA1(CONCAT(?contractAddressLocality, ?pop_state_code, ?contractCountryName, ?placeofperformancezipcode))
+    ?contractLocationSha
   )) AS ?contractLocation)
   BIND(URI(CONCAT(
     ?baseURI,
     "postal-address/",
-    SHA1(CONCAT(?contractAddressLocality, ?pop_state_code, ?contractCountryName, ?placeofperformancezipcode))
+    ?contractLocationSha
   )) AS ?contractAddress) 
-  BIND(URI(CONCAT(?baseURI, "country/", SHA1(?contractCountryName))) AS ?contractCountry)
-  BIND(URI(CONCAT(?baseURI, "offering/", SHA1(?includedProductOrServiceName))) AS ?item)
-  BIND(URI(CONCAT(?baseURI, "some-items/", SHA1(?includedProductOrServiceName))) AS ?includedProductOrService)
+  BIND(URI(CONCAT(?baseURI, "country/", SHA1(?placeofperformancecountrycode))) AS ?contractCountry)
+  BIND(URI(CONCAT(?baseURI, "offering/",   SHA1(?productorservicecode))) AS ?item)
+  BIND(URI(CONCAT(?baseURI, "some-items/", SHA1(?productorservicecode))) AS ?includedProductOrService)
   BIND(URI(CONCAT(
     "http://purl.org/weso/pscs/naics/2012/resource/",
     IF(
