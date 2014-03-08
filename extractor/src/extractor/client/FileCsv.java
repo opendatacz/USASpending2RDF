@@ -34,7 +34,7 @@ public class FileCsv extends Extractor {
                 FileWriter bw = new FileWriter(output);
 
 
-                String line;
+                String line = null;
                 int stepLine = 0;
                 bw.write(header + LINE_SEPARATOR);
                 while ( stepLine < step && (line = br.readLine()) != null) {
@@ -48,6 +48,10 @@ public class FileCsv extends Extractor {
                 offset += step;
                 System.out.println("CSV lines processed: " + offset);
 
+                if (line == null) {
+                    System.out.println("Reached end of file, ending");
+                    break;
+                }
             }
             br.close();
             System.out.println("CSV split finished");
